@@ -15,40 +15,49 @@ from qiskit_ibm_runtime import EstimatorV2 as Estimator
 import matplotlib.pyplot as plt
 import matplotlib.ticker as tck
 
+# Mike comment: the items above are items I need to import for any of the code below to run without error
+
 # To run on hardware, select the backend with the fewest number of jobs in the queue
-service = QiskitRuntimeService()
+service = QiskitRuntimeService() # Mike comment: create a new instance of the QiskitRuntimeService class called 'service'
+
+# Mike comment: the least_busy() method under QiskikRuntimeService() looks for a real quantum machine to use for the simulation. This program needs 127 qubits to run properly. 'name' is one of its properties.
 backend = service.least_busy(
     operational=True, simulator=False, min_num_qubits=127
 )
 print(backend.name)
 
 # Create a parameterized CHSH circuit
+# Mike comment: rotation angle Theta to change the state of a qubit
 theta = Parameter("$\\theta$")
 
-chsh_circuit = QuantumCircuit(2)
-chsh_circuit.h(0)
-chsh_circuit.cx(0, 1)
-chsh_circuit.ry(theta, 0)
-chsh_circuit.draw(output="mpl", idle_wires=False, style="iqp")
+chsh_circuit = QuantumCircuit(2) # Mike comment: set up a circuit with 2 qubits
+chsh_circuit.h(0) # Mike comment: 1st qubit, always |0>
+chsh_circuit.cx(0, 1) # Mike comment: entagles the 2 qubits
+chsh_circuit.ry(theta, 0) # Mike comment: ry = rotate around the y-axis...by angle theta per the arguments
+chsh_circuit.draw(output="mpl", idle_wires=False, style="iqp") # Mike comment: draws a diagram of the chsh circuit
 
-number_of_phases = 21
+number_of_phases = 21 # Mike comment: phases of theta
 phases = np.linspace(0, 2 * np.pi, number_of_phases)
 # Phases need to be expressed as list of lists in order to work
 individual_phases = [[ph] for ph in phases]
 
 # <CHSH1> = <AB> - <Ab> + <aB> + <ab> -> <ZZ> - <ZX> + <XZ> + <XX>
+# Mike comment: does this become the blue curve in my diagram?
 observable1 = SparsePauliOp.from_list(
     [("ZZ", 1), ("ZX", -1), ("XZ", 1), ("XX", 1)]
 )
 
 # <CHSH2> = <AB> + <Ab> - <aB> + <ab> -> <ZZ> + <ZX> - <XZ> + <XX>
+# Mike comment: does this become the orange curve in my diagram?
 observable2 = SparsePauliOp.from_list(
     [("ZZ", 1), ("ZX", 1), ("XZ", -1), ("XX", 1)]
 )
 
+# Mike comment: set the target for the chart
 target = backend.target
 pm = generate_preset_pass_manager(target=target, optimization_level=3)
 
+# Mike comment: configure the drawing for the circuit results
 chsh_isa_circuit = pm.run(chsh_circuit)
 chsh_isa_circuit.draw(output="mpl", idle_wires=False, style="iqp")
 
@@ -61,17 +70,17 @@ isa_observable2 = observable2.apply_layout(layout=chsh_isa_circuit.layout)
 estimator = Estimator(mode=backend)
 
 pub = (
-    chsh_isa_circuit,  # ISA circuit
+    chsh_isa_circuit,  # ISA circuit -- Mike comment - ISA = Instruction Set Architecture
     [[isa_observable1], [isa_observable2]],  # ISA Observables
     individual_phases,  # Parameter values
 )
 
-job_result = estimator.run(pubs=[pub]).result()
+job_result = estimator.run(pubs=[pub]).result() # Mike comment: sets the result of the estimator run on the local simulator
 
-chsh1_est = job_result[0].data.evs[0]
-chsh2_est = job_result[0].data.evs[1]
+chsh1_est = job_result[0].data.evs[0] # Mike comment: average measurement outcome for chsh1 for all 21 theta values
+chsh2_est = job_result[0].data.evs[1] # Mike comment: average measurement outcome for chsh2 for all 21 theta values
 
-fig, ax = plt.subplots(figsize=(10, 6))
+fig, ax = plt.subplots(figsize=(10, 6)) # Mike comment: chart dimensions, including those below...
 
 # results from hardware
 ax.plot(phases / np.pi, chsh1_est, "o-", label="CHSH1", zorder=3)
@@ -96,3 +105,5 @@ plt.xlabel("Theta")
 plt.ylabel("CHSH witness")
 plt.legend()
 plt.show()
+
+# Mike comments: end the chart show
