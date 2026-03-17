@@ -1,5 +1,5 @@
 README.md - Qiskit
 
-Yup...trying this again...
-
-My first try in a while, at checking out a Quantum Circuit...
+I tried out the CHSH Inequality code from IBM Quantum Learning.
+I've demonstrated that it is possible to break out of a classical computing boundary.
+Quantum Computation, therefore, is possible.
